@@ -5,6 +5,19 @@
 #include <SPI.h>
 #include <SoftwareSerial.h>
 
+// Debugging switches and macros
+#define DEBUG 1 // Switch debug output on and off by 1 or 0
+
+#if DEBUG
+#define PRINTS(s)   { Serial.print(F(s)); }
+#define PRINT(s,v)  { Serial.print(F(s)); Serial.print(v); }
+#define PRINTX(s,v) { Serial.print(F(s)); Serial.print(F("0x")); Serial.print(v, HEX); }
+#else
+#define PRINTS(s)
+#define PRINT(s,v)
+#define PRINTX(s,v)
+#endif
+
 // DFPlayer Mini
 SoftwareSerial mySoftwareSerial(2, 3); // RX, TX
 uint16_t numTracksInFolder;
@@ -26,6 +39,7 @@ int voiceMenu(int numberOfOptions, int startMessage, int messageOffset,
               bool preview = false, int previewFromFolder = 0);
 
 bool knownCard = false;
+
 
 // implement a notification class,
 // its member methods will get called
@@ -190,6 +204,13 @@ void setup() {
                         // Schnittstelle
   randomSeed(analogRead(A0)); // Zufallsgenerator initialisieren
 
+  // Status LED
+  pinMode(PD6, OUTPUT);
+  digitalWrite(PD6, HIGH);
+  analogWrite(PD6, 20); //Dimmen der LED
+  #if DEBUG
+    Serial.println(F("LED"));
+  #endif
   Serial.println(F("TonUINO Version 2.0"));
   Serial.println(F("(c) Thorsten Voß"));
 
@@ -237,17 +258,27 @@ void loop() {
 
     if (pauseButton.wasReleased()) {
       if (ignorePauseButton == false) {
-        if (isPlaying())
+        if (isPlaying()) {
+          #if DEBUG
+          Serial.println(F("Pause"));
+          #endif
           mp3.pause();
-        else
+        } else {
+          #if DEBUG
+          Serial.println(F("Start"));
+          #endif
           mp3.start();
-      }
+        }
+       }
       ignorePauseButton = false;
     } else if (pauseButton.pressedFor(LONG_PRESS) &&
                ignorePauseButton == false) {
-      if (isPlaying())
+      if (isPlaying()) {
+        #if DEBUG
+        Serial.println(F("Advert"));
+        #endif
         mp3.playAdvertisement(currentTrack);
-      else {
+      } else {
         knownCard = false;
         mp3.playMp3FolderTrack(800);
         Serial.println(F("Karte resetten..."));
